@@ -3,7 +3,7 @@ import os
 import inspect
 
 class Database():
-	""" class to handle a database this class MUST implement __init__ """
+	""" class to handle a sqlite database  """
 	def __init__(self, name, debug = True):
 		# Connect to an access database using pyodbc
 		self.debug = debug
@@ -68,6 +68,6 @@ class Database():
 			return 1
 
 	def define_function(self, function_name, function):
-		""" include function inside the database """
+		""" include function inside the database to perform specific operation"""
 		""" need positional argument in function only """
 		self.cnx.create_function(function_name, len(inspect.signature(function).parameters), function)

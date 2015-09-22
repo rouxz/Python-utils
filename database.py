@@ -40,7 +40,7 @@ class Database():
 			cursor = self.cnx.cursor()
 			#execute the SQL change
 			if self.debug == True:
-				print("Executing following SQL command : " + query + "on db :" + self.dbname)
+				print("Executing following SQL command : " + query + " on db :" + self.dbname)
 			lines = cursor.execute(query)
 			data = cursor.fetchall()
 			return data
@@ -71,3 +71,65 @@ class Database():
 		""" include function inside the database to perform specific operation"""
 		""" need positional argument in function only """
 		self.cnx.create_function(function_name, len(inspect.signature(function).parameters), function)
+		
+	def read_table_lists(self):
+		""" Find all the tables present in the database """
+		""" return the results within a table """
+		
+		return self.execute_query("SELECT name FROM sqlite_master WHERE type='table';") 
+		
+	def read_table_structure(self, table_name):
+		""" retrieve all information about the fields within a specified table """
+		return self.execute_query("PRAGMA table_info(" + table_name + ");")
+		
+	def __create_join_sql(self, join_query, table_list, parameters_matrix):
+		""" retrieve the code for an inner join of the list of tables define in table_list thanks to the joint of the parameters present in parameter_matrix """
+		""" e.g. table_list = ["TABLE_1", "TABLE_2"] """
+		""" 	parameters_matrix = [["Field 1 A", "Field 2 A"], ["Field 1 B", Field 2 C"]] """
+		""" number of colums of matrix must equal the lenght of table list """
+		
+		# check data consistency
+		number_of_tables = len(table_list)
+		consistency = True
+		
+		# check if each line of the matrix has the same size than the table list
+		for i, r in enumerate(parameters_matrix):
+			if len(parameters_matrix[i]) != number_of_tables:
+				consistency = False
+			
+		if consistency == True and number_of_tables > 0:
+			
+			sql = " SELECT * FROM "
+			
+			# declaration of tables to join
+			for i, t in enumerate(table_list):
+				if i < number_of_tables - 1:
+					sql = sql + t + " " + join_query + " "
+				else:
+					sql = sql + t + " ON (" 
+			
+			# declaration of fields to be joint
+			for j, r in enumerate(parameters_matrix):
+				# look at one row
+				for i in range(number_of_tables - 1):
+					sql = sql + table_list[i] + "." + r[i] + " = "
+				# close the statement for one row
+				sql = sql + table_list[number_of_tables - 1] + "." + r[number_of_tables - 1]
+				if j < len(parameters_matrix) - 1:
+					sql = sql + " AND "
+				
+			#closing the phrase for all the rows
+			sql = sql + ");"
+			
+			return sql
+		else:
+			if (self.debug == True):
+				print("terminated due to bad parameters for creating join")
+			return "ERROR"
+		
+	
+	def create_inner_join(self, table_list, parameters_matrix):
+		""" doc to be made """
+		return self.__create_join_sql("INNER JOIN", table_list, parameters_matrix)
+		
+		
